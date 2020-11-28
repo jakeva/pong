@@ -1,36 +1,55 @@
-use dynamo_lib::geometry::quad::Quad;
 use dynamo_lib::keyboard::*;
-use dynamo_lib::GameState;
+use dynamo_lib::renderer::RenderGeometry;
+use dynamo_lib::Game;
 
+use crate::ball::Ball;
 use crate::input::Input;
 use crate::player::Player;
 
-pub struct State {
-    player1: Player,
-    player2: Player,
-    input: Input,
+#[derive(PartialEq)]
+pub enum GameState {
+    // MainMenu,
+    // Serving,
+    Playing,
+    // GameOver,
+    Quiting,
 }
 
-impl State {
+pub struct PongGame {
+    player1: Player,
+    player2: Player,
+    ball: Ball,
+    input: Input,
+    game_state: GameState,
+}
+
+impl PongGame {
     pub fn new() -> Self {
         let player1 = Player::new((-0.8, 0.0).into(), (0.05, 0.4).into());
         let player2 = Player::new((0.8, 0.0).into(), (0.05, 0.4).into());
+        let ball = Ball::new((0.0, 0.0).into(), 0.05);
         let input = Input::new();
 
-        State {
+        PongGame {
             player1: player1,
             player2: player2,
+            ball: ball,
             input: input,
+            game_state: GameState::Playing,
         }
     }
 }
 
-impl GameState for State {
-    fn initialize(&self) {
-        println!("Game state initialized");
+impl Game for PongGame {
+    fn initialize(&self, render_geometry: &mut dyn RenderGeometry) {
+        let mut quads = Vec::new();
+        for quad in [self.player1.quad, self.player2.quad, self.ball.quad].iter() {
+            quads.push(quad.clone());
+        }
+        render_geometry.set_quads(quads);
     }
 
-    fn update(&mut self) {
+    fn update(&mut self, render_geometry: &mut dyn RenderGeometry) {
         if self.input.p1_up_pressed {
             let position = (self.player1.position().x, self.player1.position().y + 0.1);
             self.player1.update_position(position.into());
@@ -63,16 +82,19 @@ impl GameState for State {
             let position = (self.player2.position().x, self.player2.size().y * 0.5 - 1.0);
             self.player2.update_position(position.into());
         }
-    }
 
-    fn quads(&self) -> Vec<&Quad> {
-        let mut vec = Vec::new();
-        vec.push(&self.player1.quad);
-        vec.push(&self.player2.quad);
-        return vec;
+        let mut quads = Vec::new();
+        for quad in [self.player1.quad, self.player2.quad, self.ball.quad].iter() {
+            quads.push(quad.clone());
+        }
+        render_geometry.set_quads(quads);
     }
 
     fn process_keyboard(&mut self, input: KeyboardInput) {
         self.input.update(input);
+    }
+
+    fn is_quitting(&self) -> bool {
+        self.game_state == GameState::Quiting
     }
 }

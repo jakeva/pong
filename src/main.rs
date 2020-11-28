@@ -1,11 +1,12 @@
 use dynamo_lib::start;
 
+mod ball;
 mod input;
 mod player;
-mod state;
-use state::State;
+mod pong_game;
+use pong_game::PongGame;
 
 fn main() {
-    let state = State::new();
-    start("Pong", Box::new(state));
+    let pong_game = PongGame::new();
+    start("Pong", Box::new(pong_game));
 }
