@@ -1,90 +1,83 @@
 use dynamo_lib::geometry::Geometry;
 use dynamo_lib::keyboard::*;
+use dynamo_lib::renderer::render_text::TextRenderer;
 use dynamo_lib::Game;
 
-use crate::ball::Ball;
 use crate::input::Input;
-use crate::player::Player;
+use crate::state::*;
+use crate::system::*;
 
-#[derive(PartialEq)]
-pub enum GameState {
-    // MainMenu,
-    // Serving,
-    Playing,
-    // GameOver,
-    Quiting,
+#[derive(Debug, Copy, Clone)]
+pub enum Event {
+    ButtonPressed,
+    FocusChanged,
+    BallBounce(cgmath::Vector2<f32>),
+    Score(u32),
 }
 
 pub struct PongGame {
-    player1: Player,
-    player2: Player,
-    ball: Ball,
-    input: Input,
-    game_state: GameState,
+    pub input: Input,
+    events: Vec<Event>,
+    state: State,
+    menu_system: MenuSystem,
+    serving_system: ServingSystem,
+    play_system: PlaySystem,
+    ball_system: BallSystem,
+    game_over_system: GameOverSystem,
+    visibility_system: VisibilitySystem,
 }
 
 impl PongGame {
     pub fn new() -> Self {
-        let player1 = Player::new((-0.8, 0.0).into(), (0.05, 0.4).into());
-        let player2 = Player::new((0.8, 0.0).into(), (0.05, 0.4).into());
-        let ball = Ball::new((0.0, 0.0).into(), 0.05);
-        let input = Input::new();
-
-        PongGame {
-            player1: player1,
-            player2: player2,
-            ball: ball,
-            input: input,
-            game_state: GameState::Playing,
+        Self {
+            input: Input::new(),
+            events: Vec::new(),
+            state: State::new(),
+            menu_system: MenuSystem,
+            serving_system: ServingSystem::new(),
+            play_system: PlaySystem,
+            ball_system: BallSystem,
+            game_over_system: GameOverSystem::new(),
+            visibility_system: VisibilitySystem,
         }
     }
 }
 
 impl Game for PongGame {
-    fn initialize(&self, geometry: &mut Geometry) {
-        for quad in [self.player1.quad, self.player2.quad, self.ball.quad].iter() {
-            geometry.push_quad(quad);
-        }
+    fn initialize(
+        &mut self,
+        geometry: &mut Geometry,
+        text_renderer: &mut TextRenderer,
+        window_size: (f32, f32),
+    ) {
+        self.menu_system.start(&mut self.state);
+        self.state.initialize(geometry, text_renderer);
     }
 
-    fn update(&mut self, geometry: &mut Geometry) {
-        if self.input.p1_up_pressed {
-            let position = (self.player1.position().x, self.player1.position().y + 0.1);
-            self.player1.update_position(position.into());
-        }
-        if self.input.p1_down_pressed {
-            let position = (self.player1.position().x, self.player1.position().y - 0.1);
-            self.player1.update_position(position.into());
-        }
-        if self.input.p2_up_pressed {
-            let position = (self.player2.position().x, self.player2.position().y + 0.1);
-            self.player2.update_position(position.into());
-        }
-        if self.input.p2_down_pressed {
-            let position = (self.player2.position().x, self.player2.position().y - 0.1);
-            self.player2.update_position(position.into());
-        }
-
-        // normalize players
-        if self.player1.position().y > 1.0 - self.player1.size().y * 0.5 {
-            let position = (self.player1.position().x, 1.0 - self.player1.size().y * 0.5);
-            self.player1.update_position(position.into());
-        } else if self.player1.position().y < self.player1.size().y * 0.5 - 1.0 {
-            let position = (self.player1.position().x, self.player1.size().y * 0.5 - 1.0);
-            self.player1.update_position(position.into());
-        }
-        if self.player2.position().y > 1.0 - self.player2.size().y * 0.5 {
-            let position = (self.player2.position().x, 1.0 - self.player2.size().y * 0.5);
-            self.player2.update_position(position.into());
-        } else if self.player2.position().y < self.player2.size().y * 0.5 - 1.0 {
-            let position = (self.player2.position().x, self.player2.size().y * 0.5 - 1.0);
-            self.player2.update_position(position.into());
+    fn update(&mut self, geometry: &mut Geometry, text_renderer: &mut TextRenderer) {
+        self.visibility_system
+            .update_state(&self.input, &mut self.state, &mut self.events);
+        match self.state.game_state {
+            GameState::MainMenu => {
+                self.menu_system
+                    .update_state(&self.input, &mut self.state, &mut self.events);
+                if self.state.game_state == GameState::Serving {
+                    self.serving_system.start(&mut self.state);
+                }
+            }
+            GameState::Serving => {}
+            GameState::Playing => {
+                self.play_system
+                    .update_state(&self.input, &mut self.state, &mut self.events)
+            }
+            GameState::GameOver => {}
+            GameState::Quitting => {}
         }
 
         geometry.reset();
-        for quad in [self.player1.quad, self.player2.quad, self.ball.quad].iter() {
-            geometry.push_quad(quad);
-        }
+        text_renderer.reset();
+
+        self.state.update(geometry, text_renderer);
     }
 
     fn process_keyboard(&mut self, input: KeyboardInput) {
@@ -92,6 +85,6 @@ impl Game for PongGame {
     }
 
     fn is_quitting(&self) -> bool {
-        self.game_state == GameState::Quiting
+        self.state.game_state == GameState::Quitting
     }
 }

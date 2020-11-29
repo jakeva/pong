@@ -3,12 +3,16 @@ use dynamo_lib::geometry::quad::Quad;
 
 pub struct Player {
     pub quad: Quad,
+    pub score: u32,
+    pub visible: bool,
 }
 
 impl Player {
     pub fn new(position: cgmath::Vector2<f32>, size: cgmath::Vector2<f32>) -> Player {
         Player {
             quad: Quad::new(position, size),
+            score: 0,
+            visible: false,
         }
     }
 
@@ -18,6 +22,11 @@ impl Player {
 
     pub fn size(&self) -> cgmath::Vector2<f32> {
         self.quad.size
+    }
+
+    pub fn update_y_position(&mut self, position: f32) {
+        let position = (self.position().x, position);
+        self.update_position(position.into());
     }
 
     pub fn update_position(&mut self, position: cgmath::Vector2<f32>) {
