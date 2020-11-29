@@ -65,12 +65,33 @@ impl Game for PongGame {
                     self.serving_system.start(&mut self.state);
                 }
             }
-            GameState::Serving => {}
-            GameState::Playing => {
+            GameState::Serving => {
+                self.serving_system
+                    .update_state(&self.input, &mut self.state, &mut self.events);
                 self.play_system
-                    .update_state(&self.input, &mut self.state, &mut self.events)
+                    .update_state(&self.input, &mut self.state, &mut self.events);
+                if self.state.game_state == GameState::Playing {
+                    self.play_system.start(&mut self.state);
+                }
             }
-            GameState::GameOver => {}
+            GameState::Playing => {
+                self.ball_system
+                    .update_state(&self.input, &mut self.state, &mut self.events);
+                self.play_system
+                    .update_state(&self.input, &mut self.state, &mut self.events);
+                if self.state.game_state == GameState::Serving {
+                    self.serving_system.start(&mut self.state);
+                } else if self.state.game_state == GameState::GameOver {
+                    self.game_over_system.start(&mut self.state);
+                }
+            }
+            GameState::GameOver => {
+                self.game_over_system
+                    .update_state(&self.input, &mut self.state, &mut self.events);
+                if self.state.game_state == GameState::MainMenu {
+                    self.menu_system.start(&mut self.state);
+                }
+            }
             GameState::Quitting => {}
         }
 

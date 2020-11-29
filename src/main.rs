@@ -6,7 +6,6 @@ mod player;
 mod pong_game;
 mod state;
 mod system;
-mod text;
 mod util;
 use pong_game::PongGame;
 
