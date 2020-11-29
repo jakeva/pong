@@ -1,5 +1,5 @@
+use dynamo_lib::geometry::Geometry;
 use dynamo_lib::keyboard::*;
-use dynamo_lib::renderer::RenderGeometry;
 use dynamo_lib::Game;
 
 use crate::ball::Ball;
@@ -41,15 +41,13 @@ impl PongGame {
 }
 
 impl Game for PongGame {
-    fn initialize(&self, render_geometry: &mut dyn RenderGeometry) {
-        let mut quads = Vec::new();
+    fn initialize(&self, geometry: &mut Geometry) {
         for quad in [self.player1.quad, self.player2.quad, self.ball.quad].iter() {
-            quads.push(quad.clone());
+            geometry.push_quad(quad);
         }
-        render_geometry.set_quads(quads);
     }
 
-    fn update(&mut self, render_geometry: &mut dyn RenderGeometry) {
+    fn update(&mut self, geometry: &mut Geometry) {
         if self.input.p1_up_pressed {
             let position = (self.player1.position().x, self.player1.position().y + 0.1);
             self.player1.update_position(position.into());
@@ -83,11 +81,10 @@ impl Game for PongGame {
             self.player2.update_position(position.into());
         }
 
-        let mut quads = Vec::new();
+        geometry.reset();
         for quad in [self.player1.quad, self.player2.quad, self.ball.quad].iter() {
-            quads.push(quad.clone());
+            geometry.push_quad(quad);
         }
-        render_geometry.set_quads(quads);
     }
 
     fn process_keyboard(&mut self, input: KeyboardInput) {
