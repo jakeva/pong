@@ -12,7 +12,7 @@ pub trait System {
 
 pub struct VisibilitySystem;
 impl System for VisibilitySystem {
-  fn update_state(&self, input: &Input, state: &mut State, events: &mut Vec<Event>) {
+  fn update_state(&self, _input: &Input, state: &mut State, _events: &mut Vec<Event>) {
     let is_in_game = any!(
       state.game_state,
       GameState::Serving,
@@ -135,14 +135,14 @@ impl System for PlaySystem {
 pub struct BallSystem;
 
 impl System for BallSystem {
-  fn update_state(&self, input: &Input, state: &mut State, events: &mut Vec<Event>) {
+  fn update_state(&self, _input: &Input, state: &mut State, events: &mut Vec<Event>) {
     // bounce the ball off the players
     if state.player1.contains(&state.ball) {
-      // events.push(state::Event::BallBounce(state.ball.position()));
+      events.push(Event::BallBounce(state.ball.position()));
       state.ball.position().x -= state.ball.velocity.x - state.player1.size().x;
       state.ball.velocity = util::calc_ball_velocity(&state.ball, &state.player1);
     } else if state.player2.contains(&state.ball) {
-      // events.push(state::Event::BallBounce(state.ball.position()));
+      events.push(Event::BallBounce(state.ball.position()));
       state.ball.position().x -= state.ball.velocity.x + state.player2.size().x;
       state.ball.velocity.x *= -state.player2.size().y;
       state.ball.velocity = util::calc_ball_velocity(&state.ball, &state.player2);
@@ -152,11 +152,11 @@ impl System for BallSystem {
       .ball
       .update_position(state.ball.position() + state.ball.velocity);
     if state.ball.position().y > 1.0 {
-      // events.push(state::Event::BallBounce(state.ball.position()));
+      events.push(Event::BallBounce(state.ball.position()));
       state.ball.position().y = 1.0;
       state.ball.velocity.y *= -1.0;
     } else if state.ball.position().y < -1.0 {
-      // events.push(state::Event::BallBounce(state.ball.position()));
+      events.push(Event::BallBounce(state.ball.position()));
       state.ball.position().y = -1.0;
       state.ball.velocity.y *= -1.0;
     }
@@ -164,11 +164,11 @@ impl System for BallSystem {
     if state.ball.position().x > 1.0 {
       state.player1.score += 1;
       state.game_state = GameState::Serving;
-    // events.push(state::Event::Score(0));
+      events.push(Event::Score(0));
     } else if state.ball.position().x < -1.0 {
       state.player2.score += 1;
       state.game_state = GameState::Serving;
-      // events.push(state::Event::Score(1));
+      events.push(Event::Score(1));
     }
   }
 }
@@ -195,7 +195,7 @@ impl System for ServingSystem {
     state.player2_score.render_text.text = format!("{}", state.player2.score);
   }
 
-  fn update_state(&self, input: &Input, state: &mut State, events: &mut Vec<Event>) {
+  fn update_state(&self, _input: &Input, state: &mut State, _events: &mut Vec<Event>) {
     let current_time = std::time::Instant::now();
     let delta_time = current_time - self.last_time;
     if delta_time.as_secs_f32() > 2.0 {
@@ -217,24 +217,24 @@ impl GameOverSystem {
 }
 
 impl System for GameOverSystem {
-  fn start(&mut self, game: &mut State) {
-    // self.last_time = std::time::Instant::now();
+  fn start(&mut self, state: &mut State) {
+    self.last_time = std::time::Instant::now();
 
-    // state.player1_score.text = format!("{}", state.player1.score);
-    // state.player2_score.text = format!("{}", state.player2.score);
+    state.player1_score.render_text.text = format!("{}", state.player1.score);
+    state.player2_score.render_text.text = format!("{}", state.player2.score);
 
-    // state.win_text.text = if state.player1.score > state.player2.score {
-    //   String::from("Player 1 wins!")
-    // } else {
-    //   String::from("Player 2 wins!")
-    // };
+    state.win_text.render_text.text = if state.player1.score > state.player2.score {
+      String::from("Player 1 wins!")
+    } else {
+      String::from("Player 2 wins!")
+    };
   }
 
-  fn update_state(&self, input: &Input, state: &mut State, events: &mut Vec<Event>) {
-    // let current_time = std::time::Instant::now();
-    // let delta_time = current_time - self.last_time;
-    // if delta_time.as_secs_f32() > 1.0 {
-    //   state.game_state = state::GameState::MainMenu;
-    // }
+  fn update_state(&self, _input: &Input, state: &mut State, _events: &mut Vec<Event>) {
+    let current_time = std::time::Instant::now();
+    let delta_time = current_time - self.last_time;
+    if delta_time.as_secs_f32() > 1.0 {
+      state.game_state = GameState::MainMenu;
+    }
   }
 }

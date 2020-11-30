@@ -1,11 +1,32 @@
 use dynamo_lib::geometry::Geometry;
 use dynamo_lib::keyboard::*;
 use dynamo_lib::renderer::render_text::TextRenderer;
+use dynamo_lib::sound::SoundSystem;
 use dynamo_lib::Game;
+
+use std::io::Cursor;
 
 use crate::input::Input;
 use crate::state::*;
 use crate::system::*;
+
+const BOUNCE_BYTES: &[u8] = include_bytes!("../res/sounds/4362__noisecollector__pongblipa-4.wav");
+
+pub struct SoundPack {
+    bounce: Cursor<&'static [u8]>,
+}
+
+impl SoundPack {
+    pub fn new() -> Self {
+        Self {
+            bounce: Cursor::new(BOUNCE_BYTES),
+        }
+    }
+
+    pub fn bounce(&self) -> rodio::Decoder<Cursor<&'static [u8]>> {
+        rodio::Decoder::new(self.bounce.clone()).unwrap()
+    }
+}
 
 #[derive(Debug, Copy, Clone)]
 pub enum Event {
@@ -25,6 +46,7 @@ pub struct PongGame {
     ball_system: BallSystem,
     game_over_system: GameOverSystem,
     visibility_system: VisibilitySystem,
+    sound_pack: SoundPack,
 }
 
 impl PongGame {
@@ -39,6 +61,7 @@ impl PongGame {
             ball_system: BallSystem,
             game_over_system: GameOverSystem::new(),
             visibility_system: VisibilitySystem,
+            sound_pack: SoundPack::new(),
         }
     }
 }
@@ -48,13 +71,34 @@ impl Game for PongGame {
         &mut self,
         geometry: &mut Geometry,
         text_renderer: &mut TextRenderer,
-        window_size: (f32, f32),
+        _sound_system: &SoundSystem,
+        _window_size: (f32, f32),
     ) {
         self.menu_system.start(&mut self.state);
         self.state.initialize(geometry, text_renderer);
     }
 
-    fn update(&mut self, geometry: &mut Geometry, text_renderer: &mut TextRenderer) {
+    fn update(
+        &mut self,
+        geometry: &mut Geometry,
+        text_renderer: &mut TextRenderer,
+        sound_system: &SoundSystem,
+    ) {
+        for event in &self.events {
+            match event {
+                Event::FocusChanged | Event::ButtonPressed => {
+                    sound_system.queue(self.sound_pack.bounce());
+                }
+                Event::BallBounce(_pos) => {
+                    sound_system.queue(self.sound_pack.bounce());
+                }
+                Event::Score(_) => {
+                    sound_system.queue(self.sound_pack.bounce());
+                }
+            }
+        }
+        self.events.clear();
+
         self.visibility_system
             .update_state(&self.input, &mut self.state, &mut self.events);
         match self.state.game_state {
