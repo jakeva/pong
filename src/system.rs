@@ -7,12 +7,12 @@ use crate::util;
 pub trait System {
   #[allow(unused_variables)]
   fn start(&mut self, game: &mut State) {}
-  fn update_state(&self, input: &Input, state: &mut State, events: &mut Vec<Event>);
+  fn update_state(&self, input: &mut Input, state: &mut State, events: &mut Vec<Event>);
 }
 
 pub struct VisibilitySystem;
 impl System for VisibilitySystem {
-  fn update_state(&self, _input: &Input, state: &mut State, _events: &mut Vec<Event>) {
+  fn update_state(&self, _input: &mut Input, state: &mut State, _events: &mut Vec<Event>) {
     let is_in_game = any!(
       state.game_state,
       GameState::Serving,
@@ -46,7 +46,12 @@ impl System for MenuSystem {
     state.quit_button.render_text.focused = false;
   }
 
-  fn update_state(&self, input: &Input, state: &mut State, events: &mut Vec<Event>) {
+  fn update_state(&self, input: &mut Input, state: &mut State, events: &mut Vec<Event>) {
+    if input.esc_pressed {
+      events.push(Event::ButtonPressed);
+      state.game_state = GameState::Quitting;
+    }
+
     if state.play_button.focused() && input.ui_down_pressed() {
       events.push(Event::FocusChanged);
       state.play_button.set_focus(false);
@@ -71,7 +76,13 @@ impl System for MenuSystem {
 pub struct PlaySystem;
 
 impl System for PlaySystem {
-  fn update_state(&self, input: &Input, state: &mut State, _events: &mut Vec<Event>) {
+  fn update_state(&self, input: &mut Input, state: &mut State, events: &mut Vec<Event>) {
+    if input.esc_pressed {
+      input.clear();
+      events.push(Event::ButtonPressed);
+      state.game_state = GameState::MainMenu;
+    }
+
     if input.p1_up_pressed {
       let position = (
         state.player1.position().x,
@@ -135,7 +146,7 @@ impl System for PlaySystem {
 pub struct BallSystem;
 
 impl System for BallSystem {
-  fn update_state(&self, _input: &Input, state: &mut State, events: &mut Vec<Event>) {
+  fn update_state(&self, _input: &mut Input, state: &mut State, events: &mut Vec<Event>) {
     // bounce the ball off the players
     if state.player1.contains(&state.ball) {
       events.push(Event::BallBounce(state.ball.position()));
@@ -163,12 +174,20 @@ impl System for BallSystem {
 
     if state.ball.position().x > 1.0 {
       state.player1.score += 1;
-      state.game_state = GameState::Serving;
-      events.push(Event::Score(0));
+      if state.player1.score >= 5 {
+        state.game_state = GameState::GameOver;
+      } else {
+        state.game_state = GameState::Serving;
+        events.push(Event::Score(0));
+      }
     } else if state.ball.position().x < -1.0 {
       state.player2.score += 1;
-      state.game_state = GameState::Serving;
-      events.push(Event::Score(1));
+      if state.player2.score >= 5 {
+        state.game_state = GameState::GameOver;
+      } else {
+        state.game_state = GameState::Serving;
+        events.push(Event::Score(1));
+      }
     }
   }
 }
@@ -195,7 +214,13 @@ impl System for ServingSystem {
     state.player2_score.render_text.text = format!("{}", state.player2.score);
   }
 
-  fn update_state(&self, _input: &Input, state: &mut State, _events: &mut Vec<Event>) {
+  fn update_state(&self, input: &mut Input, state: &mut State, events: &mut Vec<Event>) {
+    if input.esc_pressed {
+      input.clear();
+      events.push(Event::ButtonPressed);
+      state.game_state = GameState::MainMenu;
+    }
+
     let current_time = std::time::Instant::now();
     let delta_time = current_time - self.last_time;
     if delta_time.as_secs_f32() > 2.0 {
@@ -230,10 +255,15 @@ impl System for GameOverSystem {
     };
   }
 
-  fn update_state(&self, _input: &Input, state: &mut State, _events: &mut Vec<Event>) {
+  fn update_state(&self, input: &mut Input, state: &mut State, events: &mut Vec<Event>) {
+    if input.esc_pressed {
+      events.push(Event::ButtonPressed);
+      state.game_state = GameState::Quitting;
+    }
+
     let current_time = std::time::Instant::now();
     let delta_time = current_time - self.last_time;
-    if delta_time.as_secs_f32() > 1.0 {
+    if delta_time.as_secs_f32() > 5.0 {
       state.game_state = GameState::MainMenu;
     }
   }

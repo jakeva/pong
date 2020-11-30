@@ -7,6 +7,7 @@ pub struct Input {
     pub p2_up_pressed: bool,
     pub p2_down_pressed: bool,
     pub enter_pressed: bool,
+    pub esc_pressed: bool,
 }
 
 impl Input {
@@ -32,6 +33,9 @@ impl Input {
             KeyboardKey::Return => {
                 self.enter_pressed = pressed;
             }
+            KeyboardKey::Escape => {
+                self.esc_pressed = pressed;
+            }
             _ => (),
         }
     }
@@ -42,5 +46,14 @@ impl Input {
 
     pub fn ui_down_pressed(&self) -> bool {
         self.p1_down_pressed || self.p2_down_pressed
+    }
+
+    pub fn clear(&mut self) {
+        self.p2_up_pressed = false;
+        self.p2_down_pressed = false;
+        self.p1_up_pressed = false;
+        self.p1_down_pressed = false;
+        self.enter_pressed = false;
+        self.esc_pressed = false;
     }
 }

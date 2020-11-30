@@ -65,7 +65,6 @@ impl State {
           color: (1.0, 1.0, 1.0, 1.0).into(),
           text: String::from("Play"),
           size: 32.0,
-          centered: false,
           ..Default::default()
         },
       },
@@ -94,7 +93,7 @@ impl State {
         visible: false,
         render_text: RenderText {
           // position: (render.width() * 0.75, 20.0).into(),
-          position: (20.0, 20.0).into(),
+          position: (120.0, 20.0).into(),
           color: (1.0, 1.0, 1.0, 1.0).into(),
           text: String::from("0"),
           size: 32.0,
@@ -105,7 +104,7 @@ impl State {
         visible: false,
         render_text: RenderText {
           // position: (render.width() * 0.5, render.height() * 0.5).into(),
-          position: (20.0, 20.0).into(),
+          position: (200.0, 200.0).into(),
           bounds: (UNBOUNDED_F32, UNBOUNDED_F32).into(),
           size: 32.0,
           centered: true,

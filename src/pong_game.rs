@@ -100,29 +100,29 @@ impl Game for PongGame {
         self.events.clear();
 
         self.visibility_system
-            .update_state(&self.input, &mut self.state, &mut self.events);
+            .update_state(&mut self.input, &mut self.state, &mut self.events);
         match self.state.game_state {
             GameState::MainMenu => {
                 self.menu_system
-                    .update_state(&self.input, &mut self.state, &mut self.events);
+                    .update_state(&mut self.input, &mut self.state, &mut self.events);
                 if self.state.game_state == GameState::Serving {
                     self.serving_system.start(&mut self.state);
                 }
             }
             GameState::Serving => {
                 self.serving_system
-                    .update_state(&self.input, &mut self.state, &mut self.events);
+                    .update_state(&mut self.input, &mut self.state, &mut self.events);
                 self.play_system
-                    .update_state(&self.input, &mut self.state, &mut self.events);
+                    .update_state(&mut self.input, &mut self.state, &mut self.events);
                 if self.state.game_state == GameState::Playing {
                     self.play_system.start(&mut self.state);
                 }
             }
             GameState::Playing => {
                 self.ball_system
-                    .update_state(&self.input, &mut self.state, &mut self.events);
+                    .update_state(&mut self.input, &mut self.state, &mut self.events);
                 self.play_system
-                    .update_state(&self.input, &mut self.state, &mut self.events);
+                    .update_state(&mut self.input, &mut self.state, &mut self.events);
                 if self.state.game_state == GameState::Serving {
                     self.serving_system.start(&mut self.state);
                 } else if self.state.game_state == GameState::GameOver {
@@ -131,7 +131,7 @@ impl Game for PongGame {
             }
             GameState::GameOver => {
                 self.game_over_system
-                    .update_state(&self.input, &mut self.state, &mut self.events);
+                    .update_state(&mut self.input, &mut self.state, &mut self.events);
                 if self.state.game_state == GameState::MainMenu {
                     self.menu_system.start(&mut self.state);
                 }
