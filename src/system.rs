@@ -25,8 +25,10 @@ impl System for VisibilitySystem {
     state.player2.visible = is_in_game;
     state.player2_score.visible = is_in_game;
 
-    state.title_text.visible = state.game_state == GameState::MainMenu;
-    state.play_button.visible = state.game_state == GameState::MainMenu;
+    state.title_text.visible =
+      state.game_state == GameState::MainMenu || state.game_state == GameState::Paused;
+    state.play_button.visible =
+      state.game_state == GameState::MainMenu || state.game_state == GameState::Paused;
     state.quit_button.visible = state.game_state == GameState::MainMenu;
 
     state.win_text.visible = state.game_state == GameState::GameOver;
@@ -142,6 +144,24 @@ impl System for PlaySystem {
         state.player2.size().y * 0.5 - 1.0,
       );
       state.player2.update_position(position.into());
+    }
+  }
+}
+
+#[derive(Debug)]
+pub struct PauseSystem;
+
+impl System for PauseSystem {
+  fn start(&mut self, state: &mut State) {
+    state.title_text.render_text.text = String::from("Paused");
+    state.play_button.render_text.text = String::from("Resume");
+    state.play_button.render_text.focused = true;
+  }
+
+  fn update_state(&self, input: &mut Input, state: &mut State, events: &mut Vec<Event>) {
+    if state.play_button.focused() && input.enter_pressed {
+      events.push(Event::ButtonPressed);
+      state.game_state = GameState::Playing;
     }
   }
 }
